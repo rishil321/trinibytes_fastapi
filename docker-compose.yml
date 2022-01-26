@@ -1,0 +1,44 @@
+# version of docker compose to use
+version: '3.8'
+volumes:
+  postgres_data:
+  static_volume:
+services:
+  postgres:
+    image: postgres:14.1-alpine
+    env_file:
+      - ./config/postgres/.env
+    container_name: postgres_trinibytes_fastapi
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_db_data:/var/lib/postgresql/data
+  web:
+    env_file:
+      - ./finsys_website/.env
+    container_name: django_finsys_website
+    restart: always
+    build: .
+    command: >
+      sh -c "python /code/finsys_website/manage.py collectstatic --noinput &&
+              python /code/finsys_website/manage.py migrate &&
+             cd finsys_website && gunicorn --certfile=/etc/certs/localhost.crt --keyfile=/etc/certs/localhost.key finsys_website.wsgi:application --bind 0.0.0.0:8000"
+    expose:
+      - 8000
+    volumes:
+      - static_volume:/code/finsys_website/static/
+    depends_on:
+      - postgres
+  nginx:
+    image: nginx:1.21-alpine
+    container_name: nginx_finsys_website
+    restart: always
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./config/nginx/:/etc/nginx/conf.d
+      - static_volume:/code/finsys_website/static/
+    depends_on:
+      - web

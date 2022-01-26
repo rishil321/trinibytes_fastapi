@@ -16,8 +16,11 @@ def test_scrape_all_current_tnt_jobs():
     assert isinstance(result,list)
     assert isinstance(result[0],str)
     assert result[0] != ''
-    print(1+1)
-    print(1+1)
 
 def test_get_full_job_descriptions():
-    sample_urls = []
+    sample_urls = ['/Diagnostic-Radiographer-Job-134606.aspx?p=1|application_confirmed','/Operations-Manager-Job-134746.aspx']
+    result = caribbean_jobs_scraper.get_full_job_descriptions(sample_urls)
+    assert len(result) > 0
+    assert isinstance(result, list)
+    assert isinstance(result[0], dict)
+    assert result[0] != {}

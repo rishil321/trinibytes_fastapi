@@ -15,6 +15,7 @@ import logging
 import os
 import logging.config
 import math
+import re
 # Imports from the cheese factory
 import requests
 from bs4 import BeautifulSoup
@@ -57,7 +58,7 @@ def scrape_all_current_tnt_jobs():
         total_pages = math.ceil(total_jobs / jobs_per_page)
         # then get all job urls in each page
         all_job_urls = []
-        while (current_page_num <= total_pages):
+        while current_page_num <= total_pages:
             all_job_urls_soup = soup.find_all('div', 'job-result-title')
             for url in all_job_urls_soup:
                 job_url = url.contents[1].contents[0].attrs['href']
@@ -88,14 +89,44 @@ def get_full_job_descriptions(all_job_urls):
     """
     try:
         logging.info("Scraping full job descriptions from each job URL")
+        full_job_descriptions = []
         for url in all_job_urls:
-            full_url = 'https://www.caribbeanjobs.com/' + url
-            response = requests.get(url, headers=HTTP_GET_HEADERS, verify=False)
+            full_url = 'https://www.caribbeanjobs.com' + url
+            response = requests.get(full_url, headers=HTTP_GET_HEADERS, verify=False)
             if response.status_code != 200:
                 raise RuntimeError("Incorrect status code returned from caribbeanjobs.com")
             soup = BeautifulSoup(response.text, 'html.parser')
+            # find the javascript node containing all the juicy job details
+            javascript_detail_node = soup.find('script', text=re.compile(r'\bdigitalData\b'))
+            # also find the main node containing the main job data
+            full_job_detail_node = soup.find('div', 'job-details')
+            # now pull the data from these nodes and add them to our dict
+            job_post_details = {
+                'url': full_url
+            }
+            for detail in javascript_detail_node.text.split('\r\n'):
+                if 'company_name' in detail:
+                    job_post_details['company_name'] = detail.split(':')[1].replace(",", "").replace('\"', '')
+                elif 'job__title' in detail:
+                    job_post_details['job_title'] = detail.split(':')[1].replace(",", "").replace('\"', '')
+                elif 'job_id' in detail:
+                    job_post_details['caribbeanjobs_job_id'] = detail.split(':')[1].replace(",", "").replace('\"', '')
+                elif 'primary_category_name' in detail:
+                    job_post_details['job_category'] = detail.split(':')[1].replace(",", "").replace('\"', '')
+                elif 'job__location' in detail:
+                    job_post_details['job_location'] = detail.split(':')[1].replace(",", "").replace('\"', '')
+                elif 'salary_range' in detail:
+                    job_post_details['job_salary'] = detail.split(':')[1].replace(",", "").replace('\"', '')
+                elif 'min_education' in detail:
+                    job_post_details['job_min_education_requirement'] = detail.split(':')[1].replace(",", "").replace(
+                        '\"', '')
+            job_post_details['full_job_description'] = full_job_detail_node.text
+            full_job_descriptions.append(job_post_details)
+        logging.info("All full job descriptions added successfully")
+        return full_job_descriptions
     except Exception as exc:
         logging.error("Error.", exc_info=exc)
+        return []
 
 
 def main():
