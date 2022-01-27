@@ -19,6 +19,7 @@ import re
 # Imports from the cheese factory
 import requests
 from bs4 import BeautifulSoup
+from sqlalchemy import create_engine
 
 # Imports from the local filesystem
 from .logging_config import LOGGING_CONFIG
@@ -127,6 +128,23 @@ def get_full_job_descriptions(all_job_urls):
     except Exception as exc:
         logging.error("Error.", exc_info=exc)
         return []
+
+
+def write_full_job_descriptions_to_db(full_job_descriptions):
+    try:
+        postgres_user = 'postgres'
+        postgres_password = 'postgres'
+        if 'POSTGRES_USER' in os.environ:
+            postgres_user = os.environ['POSTGRES_USER']
+            logging.info("Postgres username found in environ")
+        if 'POSTGRES_PASSWORD' in os.environ:
+            postgres_password = os.environ['POSTGRES_PASSWORD']
+        db_string = f"postgresql+psycopg2://{postgres_user}:{postgres_password}@postgres:5432/trinibytes_db"
+        db_engine = create_engine(db_string, pool_pre_ping=True)
+        db_engine.connect()
+        pass
+    except Exception as exc:
+        logging.error("Error.", exc_info=exc)
 
 
 def main():

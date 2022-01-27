@@ -13,7 +13,7 @@ COPY ./config/nginx/certs /etc/certs
 # Copy the poetry.lock and pyproject.toml files to setup poetry
 COPY poetry.lock pyproject.toml /code/
 RUN pip install poetry
-RUN POETRY_VIRTUALENVS_CREATE=false \
-  && poetry install --no-dev --no-interaction --no-ansi
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-interaction --no-ansi
 # Copy project files into container
 COPY . /code/
