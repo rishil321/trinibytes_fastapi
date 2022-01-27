@@ -15,7 +15,7 @@ try:
     SQLALCHEMY_DATABASE_URL =  f"postgresql+psycopg2://{postgres_user}:{postgres_password}@postgres:5432/trinibytes_db"
 
     engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+        SQLALCHEMY_DATABASE_URL
     )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
