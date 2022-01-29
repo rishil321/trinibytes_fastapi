@@ -20,9 +20,11 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 # Imports from the local filesystem
 from .logging_config import LOGGING_CONFIG
+import models
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
@@ -122,7 +124,18 @@ def get_full_job_descriptions(all_job_urls):
                     job_post_details['job_min_education_requirement'] = detail.split(':')[1].replace(",", "").replace(
                         '\"', '')
             job_post_details['full_job_description'] = full_job_detail_node.text
-            full_job_descriptions.append(job_post_details)
+            full_job_descriptions.append(
+                models.CaribbeanJobsPost(caribbeanjobs_job_id=job_post_details['caribbeanjobs_job_id'],
+                                         url=job_post_details['url'],
+                                         job_title=job_post_details['job_title'],
+                                         job_company=job_post_details['job_company'],
+                                         job_category=job_post_details['job_category'],
+                                         job_location=job_post_details['job_location'],
+                                         job_salary=job_post_details['job_salary'],
+                                         job_min_education_requirement=job_post_details[
+                                             'job_min_education_requirement'],
+                                         full_job_description=job_post_details['full_job_description'],
+                                         ))
         logging.info("All full job descriptions added successfully")
         return full_job_descriptions
     except Exception as exc:
@@ -142,7 +155,12 @@ def write_full_job_descriptions_to_db(full_job_descriptions):
         db_string = f"postgresql+psycopg2://{postgres_user}:{postgres_password}@postgres:5432/trinibytes_db"
         db_engine = create_engine(db_string, pool_pre_ping=True)
         db_engine.connect()
-        pass
+        logging.info("Now writing all current caribbean jobs descriptions to the db")
+        Session = sessionmaker(bind=db_engine)
+        session = Session()
+        session.add_all(full_job_descriptions)
+        session.commit()
+        logging.info("All records inserted into db successfully.")
     except Exception as exc:
         logging.error("Error.", exc_info=exc)
 
