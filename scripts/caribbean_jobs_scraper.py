@@ -19,8 +19,9 @@ import re
 # Imports from the cheese factory
 import requests
 from bs4 import BeautifulSoup
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import insert
 
 # Imports from the local filesystem
 from .logging_config import LOGGING_CONFIG
@@ -128,7 +129,7 @@ def get_full_job_descriptions(all_job_urls):
                 models.CaribbeanJobsPost(caribbeanjobs_job_id=job_post_details['caribbeanjobs_job_id'],
                                          url=job_post_details['url'],
                                          job_title=job_post_details['job_title'],
-                                         job_company=job_post_details['job_company'],
+                                         job_company=job_post_details['company_name'],
                                          job_category=job_post_details['job_category'],
                                          job_location=job_post_details['job_location'],
                                          job_salary=job_post_details['job_salary'],
@@ -156,23 +157,52 @@ def write_full_job_descriptions_to_db(full_job_descriptions):
         db_engine = create_engine(db_string, pool_pre_ping=True)
         db_engine.connect()
         logging.info("Now writing all current caribbean jobs descriptions to the db")
-        Session = sessionmaker(bind=db_engine)
-        session = Session()
-        session.add_all(full_job_descriptions)
-        session.commit()
+        with db_engine.connect() as conn:
+            conn = conn.execution_options(
+                isolation_level="AUTOCOMMIT"
+            )
+            with conn.begin():
+                metadata_obj = MetaData()
+                metadata_obj.reflect(bind=db_engine)
+                caribbeanjobs_posts_table = metadata_obj.tables['caribbeanjobs_posts']
+                insert_stmt = insert(caribbeanjobs_posts_table).values(full_job_descriptions)
+                do_update_stmt = insert_stmt.on_conflict_do_update(
+                    index_elements=[caribbeanjobs_posts_table.c.caribbeanjobs_job_id],
+                    set_={"full_job_description": insert_stmt.excluded.full_job_description, }
+                )
+                conn.execute(do_update_stmt)
+        # Session = sessionmaker(bind=db_engine)
+        # session = Session()
+        # session.add_all(full_job_descriptions)
+        # session.commit()
         logging.info("All records inserted into db successfully.")
+        return 0
     except Exception as exc:
         logging.error("Error.", exc_info=exc)
+        return -1
 
 
 def main():
-    """Docstring description for each function"""
+    """
+    The main logic to execute the sequence of functions when the script is run.
+    :return:
+    """
     try:
         # All main code here
-        pass
-    except Exception:
-        logging.exception("Error in script " + os.path.basename(__file__))
-        return 1
+        all_active_job_posts = scrape_all_current_tnt_jobs()
+        if not all_active_job_posts:
+            raise RuntimeError("Error while fetching all active job posts from caribbeanjobs.com")
+        # then go to the url of each job post and scrape the full data
+        full_job_data = get_full_job_descriptions(all_active_job_posts)
+        if not full_job_data:
+            raise RuntimeError("Error while fetching full job descriptions from caribbeanjobs.com")
+        # then write the jobs to the database
+        result_code = write_full_job_descriptions_to_db(full_job_data)
+        if result_code != 0:
+            raise RuntimeError("Error while writing data to db.")
+    except Exception as exc:
+        logging.error("Error in script " + os.path.basename(__file__), exc_info=exc)
+        return -1
     else:
         logging.info(os.path.basename(__file__) + " executed successfully.")
         return 0
