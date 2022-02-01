@@ -14,7 +14,7 @@ LOGGING_CONFIG = {
         'stream_handler': {
             'class': 'logging.StreamHandler',
             'formatter': 'default_formatter',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'stream': 'ext://sys.stdout',
         },
         'info_rotating_file_handler': {

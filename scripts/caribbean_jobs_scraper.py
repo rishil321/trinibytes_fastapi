@@ -20,7 +20,6 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 
 # Imports from the local filesystem
@@ -60,6 +59,7 @@ def scrape_all_current_tnt_jobs():
         sort_by_wrap = soup.find_all('div', 'sort-by-wrap')
         total_jobs = int(sort_by_wrap[0].findNext('label').text.split(": ")[1])
         total_pages = math.ceil(total_jobs / jobs_per_page)
+        logging.info(f"Total jobs currently listed: {total_jobs}")
         # then get all job urls in each page
         all_job_urls = []
         while current_page_num <= total_pages:
@@ -125,18 +125,18 @@ def get_full_job_descriptions(all_job_urls):
                     job_post_details['job_min_education_requirement'] = detail.split(':')[1].replace(",", "").replace(
                         '\"', '')
             job_post_details['full_job_description'] = full_job_detail_node.text
-            full_job_descriptions.append(
-                models.CaribbeanJobsPost(caribbeanjobs_job_id=job_post_details['caribbeanjobs_job_id'],
-                                         url=job_post_details['url'],
-                                         job_title=job_post_details['job_title'],
-                                         job_company=job_post_details['company_name'],
-                                         job_category=job_post_details['job_category'],
-                                         job_location=job_post_details['job_location'],
-                                         job_salary=job_post_details['job_salary'],
-                                         job_min_education_requirement=job_post_details[
-                                             'job_min_education_requirement'],
-                                         full_job_description=job_post_details['full_job_description'],
-                                         ))
+            full_job_descriptions.append({'caribbeanjobs_job_id': job_post_details['caribbeanjobs_job_id'],
+                                          'url': job_post_details['url'],
+                                          'job_title': job_post_details['job_title'],
+                                          'job_company': job_post_details['company_name'],
+                                          'job_category': job_post_details['job_category'],
+                                          'job_location': job_post_details['job_location'],
+                                          'job_salary': job_post_details['job_salary'],
+                                          'job_min_education_requirement': job_post_details[
+                                              'job_min_education_requirement'],
+                                          'full_job_description': job_post_details['full_job_description'],
+                                          })
+            logging.info(f"Successfully added details for {job_post_details['job_title']} from {job_post_details['company_name']}.")
         logging.info("All full job descriptions added successfully")
         return full_job_descriptions
     except Exception as exc:
@@ -155,7 +155,6 @@ def write_full_job_descriptions_to_db(full_job_descriptions):
             postgres_password = os.environ['POSTGRES_PASSWORD']
         db_string = f"postgresql+psycopg2://{postgres_user}:{postgres_password}@postgres:5432/trinibytes_db"
         db_engine = create_engine(db_string, pool_pre_ping=True)
-        db_engine.connect()
         logging.info("Now writing all current caribbean jobs descriptions to the db")
         with db_engine.connect() as conn:
             conn = conn.execution_options(
@@ -167,7 +166,7 @@ def write_full_job_descriptions_to_db(full_job_descriptions):
                 caribbeanjobs_posts_table = metadata_obj.tables['caribbeanjobs_posts']
                 insert_stmt = insert(caribbeanjobs_posts_table).values(full_job_descriptions)
                 do_update_stmt = insert_stmt.on_conflict_do_update(
-                    index_elements=[caribbeanjobs_posts_table.c.caribbeanjobs_job_id],
+                    index_elements=['caribbeanjobs_job_id'],
                     set_={"full_job_description": insert_stmt.excluded.full_job_description, }
                 )
                 conn.execute(do_update_stmt)
