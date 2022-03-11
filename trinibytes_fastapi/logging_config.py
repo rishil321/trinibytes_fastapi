@@ -14,14 +14,14 @@ LOGGING_CONFIG = {
         'stream_handler': {
             'class': 'logging.StreamHandler',
             'formatter': 'default_formatter',
-            'level': 'INFO',
+            'level': 'DEBUG',
             'stream': 'ext://sys.stdout',
         },
         'info_rotating_file_handler': {
             'level': 'INFO',
             'formatter': 'default_formatter',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'scripts.log',
+            'filename': 'trinibytes_fastapi.log',
             'mode': 'a',
             'maxBytes': 1048576,
             'backupCount': 10

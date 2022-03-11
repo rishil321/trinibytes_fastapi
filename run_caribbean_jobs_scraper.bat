@@ -1,0 +1,1 @@
+poetry run caribbean_jobs_scraper

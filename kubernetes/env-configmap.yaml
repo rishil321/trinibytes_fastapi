@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  ENVIRON: production
+  POSTGRES_PASSWORD: cowseatgrass1
+  POSTGRES_USER: trinibytes_user
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: web-env
+  name: env

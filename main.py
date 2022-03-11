@@ -20,7 +20,7 @@ def get_db():
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Welcome to trinibytes!"}
 
 
 @app.get("/hello/{name}")

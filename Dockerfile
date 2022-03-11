@@ -4,12 +4,20 @@ FROM python:3.10
 RUN mkdir /code
 # Set the working directory inside the container 
 WORKDIR /code
-COPY ./config/nginx/certs /etc/certs
-# Update the index of packages available to apk
-#RUN apt -qq update --yes
-# install some package dependencies that we need
-#RUN apt install apache2 apache2-dev unixodbc-dev --yes
-#RUN apt install unixodbc-dev --yes
+#COPY ./config/nginx/certs /etc/certs
+# install crontab
+RUN apt-get update && apt-get -y install cron
+# Copy hello-cron file to the cron.d directory
+COPY crontab /etc/cron.d/crontab
+
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/crontab
+
+# Apply cron job
+RUN crontab /etc/cron.d/crontab
+
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
 # Copy the poetry.lock and pyproject.toml files to setup poetry
 COPY poetry.lock pyproject.toml /code/
 RUN pip install poetry

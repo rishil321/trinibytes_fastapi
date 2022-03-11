@@ -1,20 +1,9 @@
 # version of docker compose to use
 version: '3.8'
 volumes:
-  postgres_data:
   static_volume:
   alembic_migrations:
 services:
-  postgres:
-    image: postgres:14.1-alpine
-    env_file:
-      - ./config/postgres/.env
-    container_name: postgres_trinibytes
-    restart: always
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./postgres_db_data:/var/lib/postgresql/data
   web:
     env_file:
       - ./.env
@@ -22,13 +11,11 @@ services:
     restart: always
     build: .
     command: >
-      sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
+      sh -c "uvicorn main:app --reload --host 0.0.0.0"
     ports:
       - "8000:8000"
     volumes:
       - ./alembic/versions:/code/alembic/versions
-    depends_on:
-      - postgres
   nginx:
     image: nginx:1.21-alpine
     container_name: nginx_trinibytes
