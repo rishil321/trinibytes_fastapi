@@ -7,7 +7,7 @@ import os
 try:
     postgres_user = 'postgres'
     postgres_password = 'postgres'
-    postgres_schema = 'trinibytes_db'
+    postgres_schema = 'trinibytes_db_dev'
     postgres_hostname = '172.245.134.194'
     if 'POSTGRES_USER' in os.environ:
         postgres_user = os.environ['POSTGRES_USER']
