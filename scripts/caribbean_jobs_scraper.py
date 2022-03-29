@@ -28,11 +28,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 
 # Imports from the local filesystem
-from .logging_config import LOGGING_CONFIG
-import models
+from database import engine
+import models as models
+from logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
-from database import engine
 
 # Put your constants here. These should be named in CAPS.
 HTTP_GET_HEADERS = {
@@ -186,6 +186,7 @@ def update_inactive_job_posts(parsed_job_post_data: List[models.CaribbeanJobsPos
         return -1
     finally:
         if session:
+            session.expunge_all()
             session.close()
 
 
@@ -242,6 +243,7 @@ def write_parsed_job_data_to_db(parsed_job_post_data: List[models.CaribbeanJobsP
         return -1
     finally:
         if session:
+            session.expunge_all()
             session.close()
 
 

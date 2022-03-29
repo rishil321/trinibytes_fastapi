@@ -1,12 +1,8 @@
-import logging
-import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, create_engine
-from sqlalchemy import pool
+from alembic import context
 
 import models
-from alembic import context
 from database import engine, SQLALCHEMY_DATABASE_URL
 
 # this is the Alembic Config object, which provides

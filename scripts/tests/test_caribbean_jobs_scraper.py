@@ -2,8 +2,7 @@ import os
 import pytest
 from pathlib import Path
 import models
-
-import trinibytes_fastapi.trinibytes_fastapi.caribbean_jobs_scraper as caribbean_jobs_scraper
+import caribbean_jobs_scraper
 
 
 def test_main():
