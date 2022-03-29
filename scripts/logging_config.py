@@ -21,7 +21,7 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'formatter': 'default_formatter',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'trinibytes_fastapi.log',
+            'filename': 'scripts.log',
             'mode': 'a',
             'maxBytes': 1048576,
             'backupCount': 10
