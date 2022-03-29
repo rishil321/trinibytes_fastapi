@@ -56,7 +56,7 @@ spec:
                   key: PYTHONUNBUFFERED
                   name: env
           image: web
-          name: fastapi-trinibytes
+          name: backend-trinibytes
           ports:
             - containerPort: 8000
           resources: {}

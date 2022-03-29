@@ -28,9 +28,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 
 # Imports from the local filesystem
-from database import engine
-import models as models
-from logging_config import LOGGING_CONFIG
+from backend.database import engine
+import backend.models as models
+from backend.scripts.logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
@@ -163,7 +163,7 @@ def update_inactive_job_posts(parsed_job_post_data: List[models.CaribbeanJobsPos
     try:
         logging.info("Now updating active/inactive jobs in database.")
         Session = sessionmaker(bind=engine)
-        session = Session()
+        session = Session(expire_on_commit=False)
         all_active_job_posts_in_db = session.query(models.CaribbeanJobsPost).filter(
             models.CaribbeanJobsPost.job_listing_is_active).all()
         # create a list of caribbean_job ids of all the scraped/parsed job posts
@@ -186,7 +186,6 @@ def update_inactive_job_posts(parsed_job_post_data: List[models.CaribbeanJobsPos
         return -1
     finally:
         if session:
-            session.expunge_all()
             session.close()
 
 
@@ -200,7 +199,7 @@ def write_parsed_job_data_to_db(parsed_job_post_data: List[models.CaribbeanJobsP
     try:
         logging.info("Now updating/inserting all current caribbean job posts into the db")
         Session = sessionmaker(bind=engine)
-        session = Session()
+        session = Session(expire_on_commit=False)
         for job_post_data in parsed_job_post_data:
             # check if the job post has been added already
             # job_post_in_db = session.execute(select(models.CaribbeanJobsPost).where(
@@ -243,7 +242,6 @@ def write_parsed_job_data_to_db(parsed_job_post_data: List[models.CaribbeanJobsP
         return -1
     finally:
         if session:
-            session.expunge_all()
             session.close()
 
 
